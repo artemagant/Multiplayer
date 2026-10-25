@@ -4,19 +4,14 @@
 #include <cstring>
 #include <string>
 #include <stdexcept>
-#include <unordered_map>
 #include <cstdlib>
 #include <vector>
+#include <thread>
 
 #include <enet/enet.h>
 
 enet_uint16 PORT = 5000;
 std::string server_ip = "127.0.0.1";
-
-struct User {
-    int id;
-    std::string nickname;
-};
 
 std::vector<std::string> chat_history;
 
@@ -35,7 +30,7 @@ public:
     int PORT;
     const char* server_ip;
 
-    int runServer()
+    int create_server()
     {
         ENetAddress address{};
         address.host = ENET_HOST_ANY;
@@ -62,9 +57,27 @@ public:
                     reinterpret_cast<char*>(event.packet->data), 
                     event.packet->dataLength
                 );
-                system("clear");
-                chat_history.push_back(message);
-                printf("%s", get_chat_history_string().c_str());
+                if (std::strcmp(message.c_str(), "/ping") == 0){
+                    system("clear");
+                    printf("%s", get_chat_history_string().c_str());
+                }
+                else{
+                    system("clear");
+                    chat_history.push_back(message);
+                    printf("%s", get_chat_history_string().c_str());
+
+                    ENetPacket* packet = enet_packet_create(
+                        get_chat_history_string().c_str(),
+                        get_chat_history_string().size(),
+                        ENET_PACKET_FLAG_RELIABLE
+                    );
+
+                    if (packet) {
+                        enet_host_broadcast(host, 0, packet); // channel 0
+                        enet_host_flush(host);                // send queued packets now
+                    }
+                }
+                
 
                 ENetPacket* reply = enet_packet_create(
                     get_chat_history_string().c_str(), get_chat_history_string().size(), ENET_PACKET_FLAG_RELIABLE
@@ -86,7 +99,7 @@ public:
         enet_host_destroy(host);
         return 0;
     }
-    int runClient(std::string mes)
+    int send_message(std::string mes)
     {
         ENetHost* client = enet_host_create(nullptr, 1, 2, 0, 0);
         if (!client)
@@ -168,6 +181,11 @@ public:
         enet_host_destroy(client);
         return 0;
     }
+
+    void listen()
+    {
+        send_message("/ping");
+    }
 };
 
 
@@ -203,7 +221,7 @@ int main(int argc, char* argv[])
     if (std::strcmp(argv[1], "server") == 0)
     {
         printf("Running as server on port %d\n", PORT);
-        server.runServer();
+        server.run_server();
 
     }else if (std::strcmp(argv[1], "client") == 0)
     {
@@ -212,8 +230,21 @@ int main(int argc, char* argv[])
         {
             std::string message;
             std::getline(std::cin, message);
-            server.runClient(message);
+            if (std::strcmp(message.c_str(), "\n") == 0){
+                server.send_message("/ping");
+            }else {
+                server.send_message(message);
+            }
         }
+    }else if (std::strcmp(argv[1], "listen") == 0)
+    {
+        printf("Running as listener on port %d\n", PORT);
+        while (true)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            server.listen();
+        }
+
     }else
     {
         printf("Usage: ./game [args]\nAs first arg you can use:\n\tserver - run as server\n\tclient - run as clinet\nAs second arg you can put port (default is %d)\n", PORT);
