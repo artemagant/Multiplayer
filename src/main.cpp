@@ -4,14 +4,33 @@
 #include <cstring>
 #include <string>
 #include <stdexcept>
+#include <unordered_map>
+#include <cstdlib>
+#include <vector>
 
 #include <enet/enet.h>
 
 enet_uint16 PORT = 5000;
 std::string server_ip = "127.0.0.1";
 
+struct User {
+    int id;
+    std::string nickname;
+};
+
+std::vector<std::string> chat_history;
+
+
 class Server
 {
+private:
+    std::string get_chat_history_string()
+    {
+        std::string history;
+        for (std::string mes : chat_history)
+            history += mes + "\n";
+        return history;
+    }
 public:
     int PORT;
     const char* server_ip;
@@ -43,11 +62,12 @@ public:
                     reinterpret_cast<char*>(event.packet->data), 
                     event.packet->dataLength
                 );
-
-                printf("\nRecived: %s\n\n", message.c_str());
+                system("clear");
+                chat_history.push_back(message);
+                printf("%s", get_chat_history_string().c_str());
 
                 ENetPacket* reply = enet_packet_create(
-                    message.data(), message.size(), ENET_PACKET_FLAG_RELIABLE
+                    get_chat_history_string().c_str(), get_chat_history_string().size(), ENET_PACKET_FLAG_RELIABLE
                 );
 
                 if (enet_peer_send(event.peer, 0, reply) < 0)
@@ -136,7 +156,8 @@ public:
                 reinterpret_cast<char*>(event.packet->data),
                 event.packet->dataLength
             );
-            //printf("Server replied: %s\n", message.c_str());
+            system("clear");
+            printf("%s\n", reply.c_str());
             enet_packet_destroy(event.packet);
         }else 
         {
