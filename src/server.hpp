@@ -60,13 +60,15 @@ public:
                     event.packet->dataLength
                 );
                 if (std::strcmp(message.c_str(), "/ping") == 0){
-                    system("clear");
-                    printf("%s", get_chat_history_string().c_str());
+                    //system("clear");
+                    //printf("%s", get_chat_history_string().c_str());
+                    //printf("Sending ping to client\n");
                 }
                 else{
-                    system("clear");
+                    printf("Got message from client\n");
+                    //system("clear");
                     chat_history.push_back(message);
-                    printf("%s", get_chat_history_string().c_str());
+                    //printf("%s", get_chat_history_string().c_str());
 
                     ENetPacket* packet = enet_packet_create(
                         get_chat_history_string().c_str(),
@@ -163,7 +165,7 @@ public:
         std::string mess = mes;
         if (std::strcmp(mess.c_str(), "/ping") == 0){}
         else{
-            mess = name + "@: " + mes;
+            mess = name + " " + mes;
         }
         const std::string message = mess;
         ENetPacket* packet = enet_packet_create(
