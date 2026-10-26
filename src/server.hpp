@@ -192,7 +192,6 @@ public:
                 event.packet->dataLength
             );
             ret = reply;
-            system("clear");
             enet_packet_destroy(event.packet);
         }else 
         {
