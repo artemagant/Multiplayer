@@ -34,7 +34,7 @@ void draw_text_bubble(Vector2 position, User user)
 
 int main(int argc, char* argv[])
 {
-    printf("Usage: ./game [*mode] [*port] [*server ip] [*name]\n\n\t* - optional\n\nmode (optional)\n\tdefault - gui - client with gui\n\tserver - run as server without beeing able to see messages or write to chat\n\tns - no screen - run app without gui\n\n*port (optional)\n\tdefault - 5000\n\tDefines on what port to connect or create server\n\n*server ip\n\tdefault - 127.0.0.1 (localhost)\n\tDefines on through what ip to connect to server from client(you need to have server`s device ip)\n\n*name (optional)\n\tdefault - random number from 0 to 99999999\n\tFrom what name to write messages from client\n");
+    printf("Usage: ./game [*mode] [*port] [*server ip] [*name]\n\n\t* - optional\n\nmode (optional)\n\tdefault - gui - client with gui\n\tserver - run as server without beeing able to see messages or write to chat\n\n*port (optional)\n\tdefault - 5000\n\tDefines on what port to connect or create server\n\n*server ip\n\tdefault - 127.0.0.1 (localhost)\n\tDefines on through what ip to connect to server from client(you need to have server`s device ip)\n\n*name (optional)\n\tdefault - random number from 0 to 99999999\n\tFrom what name to write messages from client\n");
     srand(time(0));
 
     ChatHistory ch;
@@ -44,6 +44,8 @@ int main(int argc, char* argv[])
     Server server;
     server.PORT = 5000; 
     server.ip = "127.0.0.1";
+
+    Client client;
     std::string name = std::to_string(rand() % 99999999);
 
     if (argc >= 5) {
@@ -51,30 +53,38 @@ int main(int argc, char* argv[])
     }
     if (argc >= 3){
         server.PORT = std::stoi(argv[2]);
+        client.port = std::stoi(argv[2]);
     }
     if (argc >= 4){
         server.ip = argv[3];
+        client.ip = argv[3];
     }
     if (argc >= 2 && std::strcmp(argv[1], "server") == 0) {
         server.create_server();
     }
-    if (argc >= 2 && std::strcmp(argv[1], "ns") == 0){
+    client.connect();
+    /*if (argc >= 2 && std::strcmp(argv[1], "ns") == 0){
         while (true){
             std::string message;
             std::getline(std::cin, message);
-            printf("%s\n", server.send_message(message, name).c_str());
+            client.update();
+            client.send(message);
+            system("clear");
+            printf("%s\n", client.history.c_str());
         }
-    }
+    }*/
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "fuck u");
     SetTargetFPS(FPS);
 
     text_box.name = name;
-    text_box.server = server;
+    text_box.client = &client;
 
     std::string chat_history;
 
     while(!WindowShouldClose()) {
-        ch.history = server.listen();
+        client.update();
+        ch.history = client.history;
+
         std::vector<User> users = ch.get_users();
 
         text_box.Keyboard();
@@ -86,7 +96,7 @@ int main(int argc, char* argv[])
         DrawText(name.c_str(), 2, 2, 15, BLACK);
 
         for (int i = 0; i < (int)users.size(); i++){
-            draw_text_bubble((Vector2){10, static_cast<float>(30+TEXT_BUBBLE_SIZE*i)}, users[i]);
+            draw_text_bubble(Vector2{10, static_cast<float>(30+TEXT_BUBBLE_SIZE*i)}, users[i]);
         }
 
         text_box.Draw();
