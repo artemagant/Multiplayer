@@ -1,8 +1,10 @@
 #include "server.hpp"
 #include "chat_history.hpp"
+#include "text_box.hpp"
 
 #include <stdio.h>
 #include <raylib.h>
+#include <stdbool.h>
 
 #include <iostream>
 #include <string>
@@ -32,14 +34,21 @@ void draw_text_bubble(Vector2 position, User user)
 
 int main(int argc, char* argv[])
 {
+    printf("Usage: ./game [*mode] [*port] [*server ip] [*name]\n\n\t* - optional\n\nmode (optional)\n\tdefault - gui - client with gui\n\tserver - run as server without beeing able to see messages or write to chat\n\tns - no screen - run app without gui\n\n*port (optional)\n\tdefault - 5000\n\tDefines on what port to connect or create server\n\n*server ip\n\tdefault - 127.0.0.1 (localhost)\n\tDefines on through what ip to connect to server from client(you need to have server`s device ip)\n\n*name (optional)\n\tdefault - random number from 0 to 99999999\n\tFrom what name to write messages from client\n");
     srand(time(0));
 
     ChatHistory ch;
+    TextBox text_box;
+    text_box.box = {10, 950, 1900, 85};
 
     Server server;
     server.PORT = 5000; 
     server.ip = "127.0.0.1";
     std::string name = std::to_string(rand() % 99999999);
+
+    if (argc >= 5) {
+        name = std::string(argv[4]);
+    }
     if (argc >= 3){
         server.PORT = std::stoi(argv[2]);
     }
@@ -49,7 +58,7 @@ int main(int argc, char* argv[])
     if (argc >= 2 && std::strcmp(argv[1], "server") == 0) {
         server.create_server();
     }
-    if (argc == 2 && std::strcmp(argv[1], "ns") == 0){
+    if (argc >= 2 && std::strcmp(argv[1], "ns") == 0){
         while (true){
             std::string message;
             std::getline(std::cin, message);
@@ -59,12 +68,16 @@ int main(int argc, char* argv[])
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "fuck u");
     SetTargetFPS(FPS);
 
+    text_box.name = name;
+    text_box.server = server;
+
     std::string chat_history;
 
     while(!WindowShouldClose()) {
-        system("clear");
         ch.history = server.listen();
         std::vector<User> users = ch.get_users();
+
+        text_box.Keyboard();
         
         BeginDrawing();
         
@@ -73,10 +86,11 @@ int main(int argc, char* argv[])
         DrawText(name.c_str(), 2, 2, 15, BLACK);
 
         for (int i = 0; i < (int)users.size(); i++){
-            printf("%s: %s\n", users[i].name.c_str(), users[i].text.c_str());
-            printf("%d", TEXT_BUBBLE_SIZE);
             draw_text_bubble((Vector2){10, static_cast<float>(30+TEXT_BUBBLE_SIZE*i)}, users[i]);
         }
+
+        text_box.Draw();
+        text_box.DrawFlashCursor();
         
 
         

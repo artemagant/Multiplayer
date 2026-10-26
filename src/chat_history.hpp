@@ -4,7 +4,7 @@
 #include <vector>
 #include <sstream>
 
-
+#define TEXT_MAX_LINES 15
 
 typedef struct {
     std::string name;
@@ -37,6 +37,10 @@ private:
 
         while (std::getline(stream, line)) {
             lines.push_back(line);
+        }
+
+        while (lines.size() > 15) {
+            lines.erase(lines.begin());
         }
 
         return lines;
