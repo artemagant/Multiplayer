@@ -40,7 +40,13 @@ int main(int argc, char* argv[])
     server.PORT = 5000; 
     server.ip = "127.0.0.1";
     std::string name = std::to_string(rand() % 99999999);
-    if (argc == 2 && std::strcmp(argv[1], "server") == 0) {
+    if (argc >= 3){
+        server.PORT = std::stoi(argv[2]);
+    }
+    if (argc >= 4){
+        server.ip = argv[3];
+    }
+    if (argc >= 2 && std::strcmp(argv[1], "server") == 0) {
         server.create_server();
     }
     if (argc == 2 && std::strcmp(argv[1], "ns") == 0){
